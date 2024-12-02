@@ -1,0 +1,34 @@
+#include <windows.h> // include for version info constants
+
+//ICON
+A ICON MOVEABLE PURE LOADONCALL DISCARDABLE "tetris.ico"
+IDI_ICON1               ICON    DISCARDABLE     "tetris.ico"
+IDI_ICON2               ICON    DISCARDABLE     "tetris.ico"
+MAINICON ICON "tetris.ico"
+//VERSIONINFO
+
+1 VERSIONINFO
+FILEVERSION 1,0,0,0
+PRODUCTVERSION 1,0,0,0
+FILETYPE VFT_APP
+{
+  BLOCK "StringFileInfo"
+	 {
+		 BLOCK "080904E4"
+		 {
+			 VALUE "CompanyName", "Tanguy Frageul"
+			 VALUE "FileVersion", "1.0"
+			 VALUE "FileDescription", "A Tetris inspired copy ported to C++"
+			 VALUE "InternalName", "Tetris"
+			 VALUE "LegalCopyright", ""
+			 VALUE "LegalTrademarks", ""
+			 VALUE "OriginalFilename", "Tetris.exe"
+			 VALUE "ProductName", "Tetris"
+			 VALUE "ProductVersion", "1.0"
+		 }
+	 }
+  BLOCK "VarFileInfo"
+	 {
+		 VALUE "Translation", 0x0809, 1252
+	 }
+}
