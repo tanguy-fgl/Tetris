@@ -6,7 +6,7 @@ A Tetris clone written in C++ using SFML library
 
 | OS | Download |
 | ---     | ---   |
-| Windows 64bit | [download](https://github.com/tanguy-fgl/Tetris/releases) |
+| Windows 64bit | [download](https://github.com/tanguy-fgl/Tetris/releases/latest) |
 
 ### Tested Platform
 - software
