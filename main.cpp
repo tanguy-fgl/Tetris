@@ -159,18 +159,18 @@ int main() {
     }
 
     Font superPixelFont;
-    if (!superPixelFont.loadFromFile("fonts/SuperPixel.ttf")) {
-        std::cerr << "Erreur : Impossible de charger la police SuperPixel.ttf\n";
+    if (!superPixelFont.loadFromFile("fonts/Daydream.ttf")) {
+        std::cerr << "Erreur : Impossible de charger la police Daydream.ttf\n";
         return -1;
     }
 
     scoreText.setFont(superPixelFont);
-    scoreText.setCharacterSize(18);
+    scoreText.setCharacterSize(14);
     scoreText.setFillColor(Color::White);
     scoreText.setPosition(10, 420);
 
     highScoreText.setFont(superPixelFont);
-    highScoreText.setCharacterSize(18);
+    highScoreText.setCharacterSize(14);
     highScoreText.setFillColor(Color::White);
     highScoreText.setPosition(10, 450);
 
@@ -178,13 +178,13 @@ int main() {
     gameOverText.setString("Game Over!");
     gameOverText.setCharacterSize(24);
     gameOverText.setFillColor(Color::Red);
-    gameOverText.setPosition(70, 200);
+    gameOverText.setPosition(40, 200);
 
     restartText.setFont(superPixelFont);
     restartText.setString("Press 'R' to Restart");
-    restartText.setCharacterSize(18);
+    restartText.setCharacterSize(16);
     restartText.setFillColor(Color::Green);
-    restartText.setPosition(25, 240);
+    restartText.setPosition(15, 270);
 
     int dx = 0;
     bool rotate = false;
