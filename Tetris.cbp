@@ -56,10 +56,18 @@
 			<Add library="ogg" />
 			<Add directory="C:/SFML/lib" />
 		</Linker>
+		<Unit filename="Arial.ttf" />
+		<Unit filename="audio/music.ogg" />
 		<Unit filename="icon.rc">
 			<Option compilerVar="WINDRES" />
 		</Unit>
+		<Unit filename="images/background.png" />
+		<Unit filename="images/frame.png" />
+		<Unit filename="images/gameover.jpg" />
+		<Unit filename="images/tiles.png" />
 		<Unit filename="main.cpp" />
+		<Unit filename="tetris.ico" />
+		<Unit filename="tetris.png" />
 		<Extensions>
 			<lib_finder disable_auto="1" />
 		</Extensions>

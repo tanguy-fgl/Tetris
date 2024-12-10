@@ -1,19 +1,23 @@
-#include <time.h>
-
 #include <SFML/Audio.hpp>
 #include <SFML/Graphics.hpp>
-#include <cstring>  // pour utiliser memset
 #include <iostream>
+#include <vector>
+#include <cstdlib>
+#include <cstring>  // Pour memset
+#include <ctime>    // Pour srand et rand
+#include <fstream>  // Pour les fichiers
 
 using namespace sf;
 
-const int M = 20;
-const int N = 10;
+const int M = 20;  // Hauteur du terrain
+const int N = 10;  // Largeur du terrain
 
-int field[M][N] = {0};
+int field[M][N] = {0};  // Terrain de jeu
+int score = 0;
+int highScore = 0;
 
 struct Point {
-  int x, y;
+    int x, y;
 } a[4], b[4];
 
 int figures[7][4] = {
@@ -23,290 +27,284 @@ int figures[7][4] = {
     3, 5, 4, 7,  // T
     2, 3, 5, 7,  // L
     3, 5, 7, 6,  // J
-    2, 3, 4, 5,  // O
+    2, 3, 4, 5   // O
 };
 
-// Calculer la position x de départ pour centrer les blocs
 const int initialX = N / 2 - 1;
-int currentSpawnX =
-    -1;  // Initialise à -1 pour indiquer qu'aucune position n'a été choisie
-int initialSpawnX =
-    -1;  // Initialise à -1 pour indiquer qu'aucune position n'a été choisie
+int currentSpawnX = -1;
+int initialSpawnX = -1;
 
-bool canSpawn(int n) {
-  for (int i = 0; i < 4; i++) {
-    int x = initialX + (figures[n][i] % 2);  // Colonnes
-    int y = figures[n][i] / 2;               // Lignes
-    if (field[y][x])                         // Si l'endroit est déjà occupé
-      return false;
-  }
-  return true;
+bool check() {
+    for (int i = 0; i < 4; i++) {
+        if (a[i].x < 0 || a[i].x >= N || a[i].y >= M) return false;
+        if (field[a[i].y][a[i].x]) return false;
+    }
+    return true;
 }
 
 bool canSpawnAt(int n, int offsetX) {
-  for (int i = 0; i < 4; i++) {
-    int x = offsetX + (figures[n][i] % 2);  // Colonnes
-    int y = figures[n][i] / 2;              // Lignes
-    if (x < 0 || x >= N ||
-        field[y][x])  // Si l'endroit est déjà occupé ou hors de l'aire de jeu
-      return false;
-  }
-  return true;
-}
-
-bool check() {
-  for (int i = 0; i < 4; i++)
-    if (a[i].x < 0 || a[i].x >= N || a[i].y >= M)
-      return 0;
-    else if (field[a[i].y][a[i].x])
-      return 0;
-
-  return 1;
+    for (int i = 0; i < 4; i++) {
+        int x = offsetX + (figures[n][i] % 2);
+        int y = figures[n][i] / 2;
+        if (x < 0 || x >= N || field[y][x]) return false;
+    }
+    return true;
 }
 
 std::vector<int> findAlternativeSpawn(int n) {
-  std::vector<int> possiblePositions;
-  for (int offsetX = 0; offsetX <= N - 2;
-       offsetX++) {  // Ajuster pour éviter les débordements
-    if (canSpawnAt(n, offsetX)) {
-      possiblePositions.push_back(offsetX);
+    std::vector<int> possiblePositions;
+    for (int offsetX = 0; offsetX < N; offsetX++) {
+        if (canSpawnAt(n, offsetX)) possiblePositions.push_back(offsetX);
     }
-  }
-  return possiblePositions;
+    return possiblePositions;
+}
+
+void loadHighScore() {
+    std::ifstream inFile("data.txt");
+    if (inFile.is_open()) {
+        inFile >> highScore;
+        inFile.close();
+    } else {
+        highScore = 0;
+    }
+}
+
+void saveHighScore() {
+    std::ofstream outFile("data.txt");
+    if (outFile.is_open()) {
+        outFile << highScore;
+        outFile.close();
+    }
 }
 
 void resetGame() {
-  // Réinitialiser le champ de jeu et autres variables
-  memset(field, 0, sizeof(field));
-  srand(time(0));
+    memset(field, 0, sizeof(field));
+    srand(static_cast<unsigned>(time(0)));
+    score = 0;
 
-  int n = rand() % 7;
-
-  if (initialSpawnX == -1) {
-    // Définir initialSpawnX lors de la première partie
-    if (canSpawnAt(n, initialX)) {
-      initialSpawnX = initialX;
-    } else {
-      std::vector<int> alternativePositions = findAlternativeSpawn(n);
-      if (!alternativePositions.empty()) {
-        std::random_shuffle(alternativePositions.begin(),
-                            alternativePositions.end());
-        initialSpawnX = alternativePositions.front();
-      } else {
-        std::cout << "Game Over: No valid spawn positions." << std::endl;
-        exit(0);  // ou toute autre action de fin de jeu
-      }
-    }
-  }
-
-  currentSpawnX =
-      initialSpawnX;  // Utiliser initialSpawnX à chaque nouvelle partie
-
-  for (int i = 0; i < 4; i++) {
-    a[i].x = currentSpawnX + (figures[n][i] % 2);  // Colonnes
-    a[i].y = figures[n][i] / 2;                    // Lignes
-  }
-}
-
-int main() {
-
-  srand(time(0));
-
-  RenderWindow window(VideoMode(320, 480), "Tetris - Tanguy Frageul");
-
-  // Charger l'image de l'icône
-  Image icon;
-  if (!icon.loadFromFile("tetris.png")) {
-    std::cerr << "Erreur : Impossible de charger l'icône." << std::endl;
-    return -1;
-  }
-
-  // Définir l'icône pour la fenêtre
-  window.setIcon(icon.getSize().x, icon.getSize().y, icon.getPixelsPtr());
-
-  Texture t1, t2, t3, tGameOver;
-  t1.loadFromFile("images/tiles.png");
-  t2.loadFromFile("images/background.png");
-  t3.loadFromFile("images/frame.png");
-  tGameOver.loadFromFile("images/gameover.jpg"); // Charger la texture de Game Over
-
-
-  Sprite s(t1), background(t2), frame(t3), gameOverSprite(tGameOver);
-
-  // Charger la musique
-  Music music;
-  if (!music.openFromFile("audio/music.ogg"))  // Thème
-    return -1;
-  music.setLoop(true);  // La musique sera jouée en boucle
-  music.play();         // Démarre la musique
-
-  int dx = 0;
-  bool rotate = 0;
-  int colorNum = 1;
-  float timer = 0, delay = 0.3;
-
-  Clock clock;
-
-  // Initialisation de la première pièce
-  resetGame();
-
-  bool gameOver = false;
-  Text gameOverText, restartText;
-  Font font;
-  if (!font.loadFromFile("arial.ttf")) {
-    std::cerr << "Erreur : Impossible de charger la police." << std::endl;
-    return -1;
-  }
-
-  gameOverText.setFont(font);
-  gameOverText.setString("Game Over!");
-  gameOverText.setCharacterSize(24);
-  gameOverText.setFillColor(Color::Red);
-  gameOverText.setPosition(90, 200);
-
-  restartText.setFont(font);
-  restartText.setString("Press 'R' to play again");
-  restartText.setCharacterSize(18);
-  restartText.setFillColor(Color::Green);
-  restartText.setPosition(70, 240);
-
-  while (window.isOpen()) {
-    float time = clock.getElapsedTime().asSeconds();
-    clock.restart();
-    timer += time;
-
-    Event e;
-    while (window.pollEvent(e)) {
-        if (e.type == Event::Closed)
-            window.close();
-
-        if (e.type == Event::KeyPressed) {
-            if (e.key.code == Keyboard::Up) rotate = true;
-            else if (e.key.code == Keyboard::Left) dx = -1;
-            else if (e.key.code == Keyboard::Right) dx = 1;
-            else if (e.key.code == Keyboard::R && gameOver) {
-                // Recommencer le jeu
-                gameOver = false;
-                resetGame();
+    int n = rand() % 7;
+    if (initialSpawnX == -1) {
+        if (canSpawnAt(n, initialX)) {
+            initialSpawnX = initialX;
+        } else {
+            auto alternativePositions = findAlternativeSpawn(n);
+            if (!alternativePositions.empty()) {
+                initialSpawnX = alternativePositions.front();
+            } else {
+                std::cout << "Game Over: No valid spawn positions.\n";
+                exit(0);
             }
         }
     }
 
-    if (gameOver) {
-        // Si le jeu est terminé, on affiche l'image de Game Over
-        window.clear();
-        window.draw(gameOverSprite); // Afficher l'image de Game Over
-        window.draw(gameOverText);
-        window.draw(restartText);
-        window.display();
-        continue;
-    }
-
-    if (Keyboard::isKeyPressed(Keyboard::Down))
-        delay = 0.05;
-
-    //// <- Move -> ///
+    currentSpawnX = initialSpawnX;
     for (int i = 0; i < 4; i++) {
-        b[i] = a[i];
-        a[i].x += dx;
+        a[i].x = currentSpawnX + (figures[n][i] % 2);
+        a[i].y = figures[n][i] / 2;
     }
-    if (!check())
-        for (int i = 0; i < 4; i++)
-            a[i] = b[i];
+}
 
-    //////Rotate//////
-    if (rotate) {
-        Point p = a[1]; // centre de rotation
-        for (int i = 0; i < 4; i++) {
-            int x = a[i].y - p.y;
-            int y = a[i].x - p.x;
-            a[i].x = p.x - x;
-            a[i].y = p.y + y;
+void checkLines() {
+    int linesCleared = 0;
+    for (int i = M - 1; i >= 0; i--) {
+        bool lineFull = true;
+        for (int j = 0; j < N; j++) {
+            if (!field[i][j]) {
+                lineFull = false;
+                break;
+            }
         }
-        if (!check())
-            for (int i = 0; i < 4; i++)
-                a[i] = b[i];
+        if (lineFull) {
+            linesCleared++;
+            for (int k = i; k > 0; k--) {
+                for (int j = 0; j < N; j++) {
+                    field[k][j] = field[k - 1][j];
+                }
+            }
+            for (int j = 0; j < N; j++) field[0][j] = 0;
+            i++; // Re-vérifier la ligne après le décalage
+        }
+    }
+    switch (linesCleared) {
+        case 1: score += 100; break;
+        case 2: score += 300; break;
+        case 3: score += 500; break;
+        case 4: score += 800; break;
+    }
+}
+
+int main() {
+    loadHighScore();
+    srand(static_cast<unsigned>(time(0)));
+    RenderWindow window(VideoMode(320, 480), "Tetris - Tanguy Frageul");
+
+    Texture t1, t2, t3, tGameOver;
+    t1.loadFromFile("images/tiles.png");
+    t2.loadFromFile("images/background.png");
+    t3.loadFromFile("images/frame.png");
+    tGameOver.loadFromFile("images/gameover.jpg");
+
+    Sprite s(t1), background(t2), frame(t3), gameOverSprite(tGameOver);
+
+    Music music;
+    if (!music.openFromFile("audio/music.ogg")) return -1;
+    music.setLoop(true);
+    music.play();
+
+    Font font;
+    Text scoreText, highScoreText, gameOverText, restartText;
+    if (!font.loadFromFile("fonts/arial.ttf")) {
+        std::cerr << "Erreur : Impossible de charger la police.\n";
+        return -1;
     }
 
-    ///////Tick//////
-    if (timer > delay) {
+    Font superPixelFont;
+    if (!superPixelFont.loadFromFile("fonts/SuperPixel.ttf")) {
+        std::cerr << "Erreur : Impossible de charger la police SuperPixel.ttf\n";
+        return -1;
+    }
+
+    scoreText.setFont(superPixelFont);
+    scoreText.setCharacterSize(18);
+    scoreText.setFillColor(Color::White);
+    scoreText.setPosition(10, 420);
+
+    highScoreText.setFont(superPixelFont);
+    highScoreText.setCharacterSize(18);
+    highScoreText.setFillColor(Color::White);
+    highScoreText.setPosition(10, 450);
+
+    gameOverText.setFont(superPixelFont);
+    gameOverText.setString("Game Over!");
+    gameOverText.setCharacterSize(24);
+    gameOverText.setFillColor(Color::Red);
+    gameOverText.setPosition(70, 200);
+
+    restartText.setFont(superPixelFont);
+    restartText.setString("Press 'R' to Restart");
+    restartText.setCharacterSize(18);
+    restartText.setFillColor(Color::Green);
+    restartText.setPosition(25, 240);
+
+    int dx = 0;
+    bool rotate = false;
+    int colorNum = 1;
+    float timer = 0, delay = 0.3;
+
+    Clock clock;
+    resetGame();
+
+    bool gameOver = false;
+
+    while (window.isOpen()) {
+        float time = clock.getElapsedTime().asSeconds();
+        clock.restart();
+        timer += time;
+
+        Event e;
+        while (window.pollEvent(e)) {
+            if (e.type == Event::Closed) window.close();
+            if (e.type == Event::KeyPressed) {
+                if (e.key.code == Keyboard::Up) rotate = true;
+                else if (e.key.code == Keyboard::Left) dx = -1;
+                else if (e.key.code == Keyboard::Right) dx = 1;
+                else if (e.key.code == Keyboard::R && gameOver) {
+                    gameOver = false;
+                    resetGame();
+                }
+            }
+        }
+
+        if (gameOver) {
+            window.clear();
+            window.draw(gameOverSprite);
+            window.draw(gameOverText);
+            window.draw(restartText);
+            window.display();
+            continue;
+        }
+
+        if (score > highScore) {
+            highScore = score;
+            saveHighScore();
+        }
+
+        if (Keyboard::isKeyPressed(Keyboard::Down)) delay = 0.05;
+
         for (int i = 0; i < 4; i++) {
             b[i] = a[i];
-            a[i].y += 1;
+            a[i].x += dx;
+        }
+        if (!check()) for (int i = 0; i < 4; i++) a[i] = b[i];
+
+        if (rotate) {
+            Point p = a[1];
+            for (int i = 0; i < 4; i++) {
+                int x = a[i].y - p.y;
+                int y = a[i].x - p.x;
+                a[i].x = p.x - x;
+                a[i].y = p.y + y;
+            }
+            if (!check()) for (int i = 0; i < 4; i++) a[i] = b[i];
         }
 
-        if (!check()) {
-            for (int i = 0; i < 4; i++)
-                field[b[i].y][b[i].x] = colorNum;
-
-            // Nouvelle pièce
-            colorNum = 1 + rand() % 7;
-            int n = rand() % 7;
-            if (canSpawnAt(n, currentSpawnX)) {
+        if (timer > delay) {
+            for (int i = 0; i < 4; i++) {
+                b[i] = a[i];
+                a[i].y += 1;
+            }
+            if (!check()) {
+                for (int i = 0; i < 4; i++) field[b[i].y][b[i].x] = colorNum;
+                checkLines();
+                colorNum = 1 + rand() % 7;
+                int n = rand() % 7;
+                if (!canSpawnAt(n, currentSpawnX)) {
+                    auto alternativePositions = findAlternativeSpawn(n);
+                    if (alternativePositions.empty()) gameOver = true;
+                    else currentSpawnX = alternativePositions.front();
+                }
                 for (int i = 0; i < 4; i++) {
                     a[i].x = currentSpawnX + (figures[n][i] % 2);
                     a[i].y = figures[n][i] / 2;
                 }
-            } else {
-                std::vector<int> alternativePositions = findAlternativeSpawn(n);
-                if (alternativePositions.empty()) {
-                    gameOver = true;
-                } else {
-                    std::random_shuffle(alternativePositions.begin(), alternativePositions.end());
-                    currentSpawnX = alternativePositions.front();
-                    for (int i = 0; i < 4; i++) {
-                        a[i].x = currentSpawnX + (figures[n][i] % 2);
-                        a[i].y = figures[n][i] / 2;
-                    }
-                }
+            }
+            timer = 0;
+        }
+
+        dx = 0;
+        rotate = false;
+        delay = 0.3;
+
+        window.clear(Color::White);
+        window.draw(background);
+
+        for (int i = 0; i < M; i++) {
+            for (int j = 0; j < N; j++) {
+                if (field[i][j] == 0) continue;
+                s.setTextureRect(IntRect(field[i][j] * 18, 0, 18, 18));
+                s.setPosition(j * 18, i * 18);
+                s.move(28, 31);
+                window.draw(s);
             }
         }
 
-        timer = 0;
-    }
 
-    ///////check lines//////////
-    int k = M - 1;
-    for (int i = M - 1; i > 0; i--) {
-        int count = 0;
-        for (int j = 0; j < N; j++) {
-            if (field[i][j])
-                count++;
-            field[k][j] = field[i][j];
-        }
-        if (count < N)
-            k--;
-    }
-
-    dx = 0;
-    rotate = 0;
-    delay = 0.3;
-
-    /////////draw//////////
-    window.clear(Color::White);
-    window.draw(background);
-
-    for (int i = 0; i < M; i++)
-        for (int j = 0; j < N; j++) {
-            if (field[i][j] == 0)
-                continue;
-            s.setTextureRect(IntRect(field[i][j] * 18, 0, 18, 18));
-            s.setPosition(j * 18, i * 18);
-            s.move(28, 31); // offset
+        for (int i = 0; i < 4; i++) {
+            s.setTextureRect(IntRect(colorNum * 18, 0, 18, 18));
+            s.setPosition(a[i].x * 18, a[i].y * 18);
+            s.move(28, 31);
             window.draw(s);
         }
 
-    for (int i = 0; i < 4; i++) {
-        s.setTextureRect(IntRect(colorNum * 18, 0, 18, 18));
-        s.setPosition(a[i].x * 18, a[i].y * 18);
-        s.move(28, 31); // offset
-        window.draw(s);
+        window.draw(frame);
+
+        scoreText.setString("Score: " + std::to_string(score));
+        highScoreText.setString("High Score: " + std::to_string(highScore));
+        window.draw(scoreText);
+        window.draw(highScoreText);
+
+        window.display();
     }
 
-    window.draw(frame);
-    window.display();
-}
-
-
-  return 0;
+    return 0;
 }

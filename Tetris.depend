@@ -426,12 +426,15 @@
 
 1730718255 source:h:\info\c++\morpion\icon.rc
 
-1733129230 source:h:\info\c++\tetris\main.cpp
-	<time.h>
+1733823694 source:h:\info\c++\tetris\main.cpp
 	<SFML/Audio.hpp>
 	<SFML/Graphics.hpp>
-	<cstring>
 	<iostream>
+	<vector>
+	<cstdlib>
+	<cstring>
+	<ctime>
+	<fstream>
 
 1732700204 source:h:\info\c++\tetris\icon.rc
 	<windows.h>
